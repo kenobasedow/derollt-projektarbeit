@@ -1,0 +1,147 @@
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Räume mit mehreren klickbaren Feldern
+    const rooms = [
+        {
+            bg: 'assets/bg1.jpg',
+            clickables: [   //klickbare Bereiche, image, Text der erscheint
+                {x:130, y:325, w:100, h:70, img:'assets/obj3.png', msg:'Ein Plattenspieler!'},
+                {x:230, y:200, w:120, h:230, img:'assets/obj3.png', msg:'Die Tür ist verschlossen!'},
+                {x:490, y:360, w:80, h:120, img:'assets/obj3.png', msg:'Ein Kamin!'}
+
+                    // Das img: obj3.png ist nicht vergeben, wodurch in diesem Fall ein leeres Feld entsteht, was denoch klickbar ist
+            ]
+        },
+        {
+            bg: 'assets/bg2.jpg',
+            clickables: [ //clickbare Bereiche, image, Text der erscheint
+                {x:110, y:430, w:160, h:60, img:'assets/obj3.png', msg:'Ein Tisch mit Büchern!'},
+                {x:420, y:430, w:80, h:80, img:'assets/obj3.png', msg:'Ein Kessel!'},
+                {x:380, y:360, w:50, h:50, img:'assets/obj3.png', msg:'Ein Kessel!'}
+
+
+            ]
+        },
+    ];
+
+    let currentRoom = 0;
+    let showText = null; // speichert die Nachricht, die angezeigt wird
+
+    // Bilder vorladen
+    const loadedImgs = {};
+    function loadImage(src, cb) {
+        if(loadedImgs[src]) { cb(loadedImgs[src]); return; }
+        const img = new Image();
+        img.onload = ()=>{ loadedImgs[src]=img; cb(img); };
+        img.src = src;
+    }
+
+    // Pfeile für Navigation
+    const arrowL = {x:20,  y:canvas.height/2-30, w:40, h:60, dir:-1};
+    const arrowR = {x:canvas.width-60, y:canvas.height/2-30, w:40, h:60, dir:1};
+
+    function drawArrow(a) {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        if(a.dir<0) {
+            ctx.moveTo(a.x+a.w, a.y);
+            ctx.lineTo(a.x, a.y+a.h/2);
+            ctx.lineTo(a.x+a.w, a.y+a.h);
+        } else {
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(a.x+a.w, a.y+a.h/2);
+            ctx.lineTo(a.x, a.y+a.h);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#888";
+        ctx.stroke();
+    }
+
+    let mouseX = 0;
+    let mouseY = 0;
+    let showCoords = false;
+
+    // Mausbewegung verfolgen
+    canvas.addEventListener('mousemove', function(e){
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    });
+
+    // Tastendruck überwachen
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'x' || e.key === 'X'){ // Taste X
+            showCoords = !showCoords; // toggle Ein/Aus
+            drawRoom(); // sofort aktualisieren
+        }
+    });
+
+    // Im drawRoom() die Anzeige der Koordinaten ergänzen
+    function drawRoom() {
+        const room = rooms[currentRoom];
+        loadImage(room.bg, img=>{
+            ctx.drawImage(img, 0,0, canvas.width, canvas.height);
+
+            // alle klickbaren Objekte zeichnen
+            room.clickables.forEach(o=>{
+                loadImage(o.img, oimg=>{
+                    ctx.drawImage(oimg, o.x, o.y, o.w, o.h);
+                });
+            });
+
+            // Navigation
+            if(currentRoom>0)  drawArrow(arrowL);
+            if(currentRoom<rooms.length-1) drawArrow(arrowR);
+
+            // Nachricht anzeigen
+            if(showText) {
+                ctx.font = "24px Arial";
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(150,50,300,60);
+                ctx.strokeStyle = "#888";
+                ctx.strokeRect(150,50,300,60);
+                ctx.fillStyle = "#222";
+                ctx.fillText(showText, 160,90);
+            }
+
+            // Mauskoordinaten unten anzeigen
+            if(showCoords){
+                ctx.font = "20px Arial";
+                ctx.fillStyle = "#fff";
+                ctx.fillText(`x=${Math.round(mouseX)}, y=${Math.round(mouseY)}`, 10, canvas.height-10);
+            }
+        });
+    }
+    drawRoom();
+
+    // Klick-Verarbeitung
+    canvas.addEventListener('click', function(e){
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const room = rooms[currentRoom];
+
+        // Klick auf klickbare Objekte prüfen
+        for(let o of room.clickables){
+            if(mx>o.x && mx<o.x+o.w && my>o.y && my<o.y+o.h){
+                showText = (showText===o.msg) ? null : o.msg; // Text toggeln
+                drawRoom();
+                return;
+            }
+        }
+
+        // Pfeile für Navigation
+        if(currentRoom>0 && mx>arrowL.x && mx<arrowL.x+arrowL.w && my>arrowL.y && my<arrowL.y+arrowL.h){
+            currentRoom--;
+            showText = null;
+            drawRoom();
+            return;
+        }
+        if(currentRoom<rooms.length-1 && mx>arrowR.x && mx<arrowR.x+arrowR.w && my>arrowR.y && my<arrowR.y+arrowR.h){
+            currentRoom++;
+            showText = null;
+            drawRoom();
+            return;
+        }
+    });
