@@ -1,10 +1,22 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    function getAssetUrl(path) {
+        const scriptSrc = document.currentScript?.src || 
+                        Array.from(document.scripts)
+                                .find(s => s.src.includes('game.js'))?.src;
+        
+        if (scriptSrc) {
+            const baseUrl = scriptSrc.substring(0, scriptSrc.lastIndexOf('/') + 1);
+            return baseUrl + path;
+        }
+        return path;
+    }
+    
     // Räume mit mehreren klickbaren Feldern
     const rooms = [
         {
-            bg: 'assets/bg1.jpg',
+            bg: getAssetUrl('assets/bg1.jpg'),
             clickables: [   //klickbare Bereiche, image, Text der erscheint
                 {x:130, y:325, w:100, h:70, img:'assets/obj3.png', msg:'Ein Plattenspieler!'},
                 {x:230, y:200, w:120, h:230, img:'assets/obj3.png', msg:'Die Tür ist verschlossen!'},
@@ -14,7 +26,7 @@
             ]
         },
         {
-            bg: 'assets/bg2.jpg',
+            bg: getAssetUrl('assets/bg2.jpg'),
             clickables: [ //clickbare Bereiche, image, Text der erscheint
                 {x:110, y:430, w:160, h:60, img:'assets/obj3.png', msg:'Ein Tisch mit Büchern!'},
                 {x:420, y:430, w:80, h:80, img:'assets/obj3.png', msg:'Ein Kessel!'},
